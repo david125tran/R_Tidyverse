@@ -289,5 +289,124 @@ str_sort(numbers.s, numeric = TRUE)
 str_view("Pizza", "z")
                     # [1] │ Pi<z><z>a
 
+# ------------------------------ Regular Expressions (regex) ------------------------------
+string <- c("string", "word", "letter", "word.letter", "character/letter")
+
+# Match "tr"
+str_view(string, "tr")
+
+# Match "t" - Any character before or after "t"
+str_view(string, ".t.")
+
+# Match "." and not as a special character 
+str_view(string, "\\.")
+
+# Match "/" and not as a special character
+str_view(string, "/")
+
+# Special characters
+#   .           Match any character
+#   \           Escape special character
+#   ()          Define groups
+#   {}          Define quantifiers
+#   ^           Match end of a string
+#   |           Or (operator)
+#   ?           Quantifier: zero or one
+#   *           Quantifier: zero or more
+#   +           Quantifier: one or more
+#   \n          New line (return)
+#   \t          Tab 
+#   \s \S       Any white space / non whitespace
+#   \d \D       Any digit / non digit
+#   \w \W       Any word character / non word character
+#   \b          Word boundaries
+
+# Classes
+#   [:digit:]   Digits
+#   [:alpha:]   Letters
+#   [:lower:]   Lowercase letters
+#   [:upper:]   Uppercase letters
+#   [:alnum:]   Letters & numbers
+#   [:punct:]   Punctuation
+#   [:graph:]   Letters, numbers, & punctuation
+#   [:space:]   Space characters (Example: \s)
+#   [:blank:]   Space & tab (but not new line)
+
+# ------------------------------ Regular Expressions (regex) - Special Characters & Classes ------------------------------
+# Different Characters
+string <- c(letters, "123", "1-5-6", "598642")
+string
+                    #  [1] "a"      "b"      "c"      "d"      "e"      "f"      "g"      "h"
+                    #  [9] "i"      "j"      "k"      "l"      "m"      "n"      "o"      "p"
+                    # [17] "q"      "r"      "s"      "t"      "u"      "v"      "w"      "x"
+                    # [25] "y"      "z"      "123"    "1-5-6"  "598642"
+
+# Match a string with digits
+str_subset(string, pattern = "\\d")
+
+# Match strings without digits
+str_subset(string, pattern = "\\D")
+
+# Match strings with pattern: "digit-digit-digit"
+str_subset(string, pattern = "\\d-\\d-\\d")
+
+set.seed(123)
+string <- c(sample(sentences, 5),
+            sample(fruit, 5),
+            sample(words, 5),
+            "This is \nnew line",
+            "String with a tab  "
+            )
+
+string
+                    #  [1] "Fasten two pins on each side."
+                    #  [2] "The bunch of grapes was pressed into wine."
+                    #  [3] "They felt gay when the ship arrived in port."
+                    #  [4] "Shake hands with this friendly child."
+                    #  [5] "Sell your gift to a buyer at a good gain."
+                    #  [6] "kiwi fruit"
+                    #  [7] "mulberry"
+                    #  [8] "kumquat"
+                    #  [9] "cantaloupe"
+                    # [10] "date"
+                    # [11] "team"
+                    # [12] "measure"
+                    # [13] "trace"
+                    # [14] "fairly"
+                    # [15] "freedom"
+                    # [16] "This is \nnew line"
+                    # [17] "String with a tab  "
+
+writeLines(string)
+
+# Match white spaces
+str_subset(string, "\\s")
+
+# Match string with new lines
+str_subset(string, "\\n")
+
+# Different Classes
+string <- c("123abc", "123", ".,?", "ABC", "\nABC", "\tabc")
+
+
+# Match digits
+str_subset(string, "[:digit:]")
+
+# Match letters
+str_subset(string, "[:alpha:]")
+
+# Match lower case letters
+str_subset(string, "[:lower:]")
+
+# Match upper case letters
+str_subset(string, "[:upper:]")
+
+# Match strings with letters, numbers, or punctuation
+str_subset(string, "[:graph:]")
+
+# Match strings with space characters
+str_subset(string, "[:blank:]")
+
+
 
 
