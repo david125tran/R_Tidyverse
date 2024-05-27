@@ -3,7 +3,7 @@ linters: linters_with_defaults(
     indentation_linter = NULL,
     infix_spaces_linter = NULL,
     line_length_linter = NULL,
-    object_name_linter(styles = c("dotted.case", "snake_case", "symbols"), regexes = character()),
+    object_name_linter = NULL,
     T_and_F_symbol_linter = NULL,
     trailing_blank_lines_linter = NULL,
     trailing_whitespace_linter = NULL,
