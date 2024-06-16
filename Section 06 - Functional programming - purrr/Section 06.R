@@ -482,3 +482,167 @@ reduce(list.n, sum)
 # ------------------------------ Transform Lists: accumulate ------------------------------
 accumulate(list.c, intersect)
 
+# ------------------------------ Nested Data ------------------------------
+# Make a df
+df <- mpg %>% 
+    filter(manufacturer %in% c("jeep", "land rover", "lincoln")) %>%
+    select(manufacturer, model, displ, cyl, hwy)
+
+# Nesting df
+df.n <- df %>%
+    group_by(manufacturer) %>%
+    nest()
+
+                # # A tibble: 3 × 2
+                # # Groups:   manufacturer [3]
+                #   manufacturer data            
+                #   <chr>        <list>
+                # 1 jeep         <tibble [8 × 4]>
+                # 2 land rover   <tibble [4 × 4]>
+                # 3 lincoln      <tibble [3 × 4]>
+
+# Unnesting df back to original df
+df1 <- df.n %>%
+    unnest(cols = c("data")) %>%
+    ungroup()
+
+# Operations that go with nesting
+df.n$data
+
+                # # A tibble: 3 × 4
+                #   model         displ   cyl   hwy
+                #   <chr>         <dbl> <int> <int>
+                # 1 navigator 2wd   5.4     8    17
+                # 2 navigator 2wd   5.4     8    16
+                # 3 navigator 2wd   5.4     8    18
+
+# Get length of model stored in df.n
+df.n$data %>% map(.x = ., .f = ~length(.$model))
+                # [[1]]
+                # [1] 8
+
+                # [[2]]
+                # [1] 4
+
+                # [[3]]
+                # [1] 3
+
+# Get average highway mpg for nested dfs
+df.n$data %>% map(.x = ., .f = ~mean(.$hwy))
+
+# Nesting mpg by manufacturer
+mpg %>%
+    group_by(manufacturer) %>%
+    nest()
+
+                # # A tibble: 15 × 2
+                # # Groups:   manufacturer [15]
+                #    manufacturer data
+                #    <chr>        <list>
+                #  1 audi         <tibble [18 × 10]>
+                #  2 chevrolet    <tibble [19 × 10]>
+                #  3 dodge        <tibble [37 × 10]>
+                #  4 ford         <tibble [25 × 10]>
+                #  5 honda        <tibble [9 × 10]>
+                #  6 hyundai      <tibble [14 × 10]>
+                #  7 jeep         <tibble [8 × 10]>
+                #  8 land rover   <tibble [4 × 10]>
+                #  9 lincoln      <tibble [3 × 10]>
+                # 10 mercury      <tibble [4 × 10]>
+                # 11 nissan       <tibble [13 × 10]>
+                # 12 pontiac      <tibble [5 × 10]>
+                # 13 subaru       <tibble [14 × 10]>
+                # 14 toyota       <tibble [34 × 10]>
+                # 15 volkswagen   <tibble [27 × 10]>
+
+diamonds %>%
+    # Nest by cut and color
+    group_by(cut, color) %>%
+    nest() %>%
+    # Get average price and length for each tibble of data stored in a list
+    mutate(`avg price` = map(data, ~mean(.$price)),
+           `nr diamonds` = map(data, ~length(.$price))) %>%
+    # Unlist the average price and length to get the actual result
+    mutate(`avg price` = unlist(`avg price`),
+           `nr diamonds` = unlist(`nr diamonds`))
+
+# ------------------------------ Nested Data Workflow ------------------------------
+df.models <- mpg %>%
+    # Nest by manufacturer
+    group_by(manufacturer) %>%
+    nest() %>%
+    # Get linear model 
+    mutate(model = map(.x = data, .f = ~lm(hwy ~ displ + cyl, data = .)))
+
+# Get audi's estimated coefficient
+model <- df.models %>% 
+    filter(manufacturer == "audi") %>%
+    pull(model)
+
+                # Coefficients:
+                # (Intercept)        displ          cyl  
+                #      34.357        3.076       -3.014
+
+# Get the actual values of Intercept, displ, and cyl as a list
+model %>% 
+    # Get all data for hwy, displ, cyl
+    flatten() %>%
+    # Get the Intercept, displ, and cyl
+    pluck(coefficients) %>%
+    # Get the Intercept, displ, and cyl in a tibble
+    enframe() %>%
+    # Get the actual values of Intercept, displ, and cyl as a list
+    .[[2]]
+
+                # [1] 34.356580  3.076490 -3.014061
+
+# Get the r squared value
+model %>% 
+    # Get model summary
+    map(summary) %>%
+    # Get the r squared value
+    map_dbl("r.squared")
+
+                # [1] 0.6018324
+
+# Coefficent function 
+extract_coef <- function(model, id_coef){
+    coefficients(model)[[id_coef]]
+}
+
+# Get estimated coefficient for all models
+df.models <- df.models %>%
+    # Get the model summary each manufacturer 
+    mutate(summary      = map(.x = model, .f = summary), 
+           # Get the r squared value for each manufacturer
+           `r squared`   = map_dbl(.x = summary, .f = "r.squared"),
+           # Get the coefficient for each manufacturer using our extract_coef() function
+           `coef a0`    = map_dbl(.x = summary, .f = extract_coef, 1),
+           `coef a1`    = map_dbl(.x = summary, .f = extract_coef, 2),
+           `coef a2`    = map_dbl(.x = summary, .f = extract_coef, 3),
+           )
+
+# Get a closer look at models where there r squared is 0
+df.models %>%
+    # Filter where r squared = 0
+    filter(`r squared` == 0) %>%
+    # Do further inspection on these manufacturers by getting their data into a tibble nested into a df
+    select(manufacturer, data) %>%
+    # Unnest into a dataframe
+    unnest(cols = c(data)) %>%
+    # Ungroup
+    ungroup() %>%
+    # Plot to inspect further
+    ggplot(aes(x = displ,
+               y = hwy,
+               color = as.factor(cyl))) + geom_point() + facet_wrap(. ~manufacturer)
+    # The data points are not linear like and so there was not a good model for the plot
+
+# Get the manufacturer with the highest "r squared"
+df.models %>%
+    # Arrange by highest "r squared"
+    arrange(desc(`r squared`)) %>%
+    head(1) # Toyota
+
+
+
