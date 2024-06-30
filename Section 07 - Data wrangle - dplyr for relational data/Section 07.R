@@ -27,7 +27,7 @@ graphics.off()
 library(nycflights13)
 library(tidyverse)
 
-# ------------------------------ dplyr for Relational Database Management Systems (RDBMS)------------------------------
+# ------------------------------ dplyr for Relational Database Management Systems (RDBMS) ------------------------------
 # dbplyr - Database backend for dplyr (convert dplyr code to SQL)
 
 # nycflights 13 tables:
@@ -234,3 +234,87 @@ semi_join(x = airlines1,
                         # 2 DL      Delta Air Lines Inc.
                         # 3 VX      Virgin America
 
+# ------------------------------ Binding Tables & Set Operations ------------------------------
+# Binding Tables:
+# bind_cols(x, y)       - Paste tables side by side and return a single table 
+# bind_row(x, y)        - Paste tables on top of the other and return a single table
+
+# Set Operations:
+# intersect(x, y)       - Returns only observations in both x and y
+# union(x, y)           - Returns unique observations in x and y
+# setdiff(x, y)         - Returns observations in x, but not in y
+
+# Create two simple tables
+airlines1 <- airlines %>%
+    slice(c(1, 3, 5, 7, 9))
+
+airlines2 <- airlines %>%
+    slice(c(2, 4, 6, 8, 10))
+
+# bind_cols()
+bind_cols(airlines1, airlines2)
+
+# bind_rows()
+bind_rows(airlines1, airlines2)
+
+# intersect()
+intersect(airlines1, airlines2)
+
+# setdiff()
+setdiff(airlines1, airlines2)
+
+# union()
+union(airlines1, airlines2)
+
+# See the unique values:
+union(airlines1, airlines2) %>% distinct()
+# As expected, returns the same thing as: union(airlines1, airlines2)
+
+# ------------------------------ dplyr's Additional Functions ------------------------------
+# add_row(.data, ...)           - Add one or more rows to a table
+# add_column(.data, ...)        - Add new column or columns to a table
+# rownames_to_column()          - Move row names into column, or move column into row names
+# columns_to_rownames()         - Move row names into column, or move column into row names
+# lag()                         - Offset elements by -1 position
+# lead()                        - Offset elements by +1 position
+# cumsum()                      - Calculate cumulative sum on selected column
+# cumprod()                     - Calculate cumulative product on selected column
+# cummin()                      - Calculate cumulative minimum on selected column
+# cummax()                      - Calculate cumulative maximum on a selected column
+# cummean()                     - Calculate cumulative mean on a selected column
+# dense_rank()                  - Rank values in a selected column
+
+df <- flights %>%
+    filter(carrier == "AA") %>%
+    arrange(time_hour)
+
+# Check if two successful flights flew from the same origin airport
+df <- df %>% 
+    mutate(`origin prev flight` = lag(x = origin, n = 1)) %>%
+    mutate(`origin test` = case_when(origin == `origin prev flight` ~ TRUE, T ~ FALSE))
+
+df %>% filter(`origin test`) %>%
+    count()
+
+# Check if two successful flights had a total distance of over 2,000 miles
+df <- df %>%
+    mutate(`distance successive flights` = distance + lead(x = distance, n = 1)) %>%
+    mutate(`distance test` = case_when(`distance successive flights` >= 2000 ~ TRUE, T ~ FALSE))
+
+df %>% filter(`distance test`) %>%
+    count()
+
+# Check first time a flight has a total distance of over 1,000,000 miles
+df <- df %>%
+    mutate(`distance running total` = cumsum(distance))
+
+df %>%
+    mutate(`flight id` = row_number()) %>%
+    filter(`distance running total` >= 1000000) %>%
+    select(`flight id`, everything()) %>%
+    head(1) %>%
+    as.data.frame()
+
+# Rank flights based on the distance of the flights
+df <- df %>%
+    mutate(`rank flight` = dense_rank(distance))
