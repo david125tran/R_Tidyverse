@@ -24,6 +24,7 @@ graphics.off()
 # install.packages("tidyverse")
 
 # ------------------------------ Load Libraries ------------------------------
+library(data.table)
 library(tidyverse)
 library(readr)
 
@@ -88,4 +89,21 @@ str(df3)
 View(df3)
 
 # ------------------------------ Exercise 4 ------------------------------
-df4 <- read_csv(file = "./big_table04")
+start_time <- Sys.time()
+df4 <- read_csv2(file = "./big_table_04.csv",
+                      sep = ";", 
+                      col_names = T,
+                      col_types = cols(.default = "c"))
+end_time <- Sys.time()
+writeLines(paste("read_csv2() Total time: ", end_time - start_time))
+# read_csv2() Total time:  0.0715689659118652
+
+start_time <- Sys.time()
+df.5 <- fread(file = "./big_table_04.csv", 
+              sep = ";", 
+              header = T,
+              colClasses = "character")
+
+end_time <- Sys.time()
+writeLines(paste("fread() Total time: ", end_time - start_time))
+# fread() Total time:  5.90072178840637
